@@ -1,89 +1,51 @@
-#include <WiFi.h>
-#include "Adafruit_MQTT.h"
-#include "Adafruit_MQTT_Client.h"
+#include "thingProperties.h"
 
-#define WLAN_SSID       "WR3005N3-757E"
-#define WLAN_PASS       "70029949"
-#define AIO_SERVER      "io.adafruit.com"
-#define AIO_SERVERPORT  1883
-#define AIO_USERNAME    "Tamtap"
-#define AIO_KEY         "aio_MsHi36MozTph1o79dOA2hSsaZ4Y5"
-
-const int relay=23;
-
-WiFiClient client;
-Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
-Adafruit_MQTT_Subscribe Light = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/light");
 void setup() {
-  digitalWrite(relay, LOW); 
+  // Initialize serial and wait for port to open:
   Serial.begin(9600);
-  delay(10);
-  pinMode(relay, OUTPUT);
-  Serial.println(); 
-  Serial.print("Connecting to ");
-  Serial.println(WLAN_SSID);
-  WiFi.begin(WLAN_SSID, WLAN_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println();
-  Serial.println("WiFi connected");
-  Serial.println("IP address: "); Serial.println(WiFi.localIP());
-  mqtt.subscribe(&Light);
- 
-}
-void loop() {
-
   
-  MQTT_connect();
-  Adafruit_MQTT_Subscribe *subscription;
-  //digitalWrite(relay, LOW);
-  while ((subscription = mqtt.readSubscription(5000))) {
+  pinMode(23, OUTPUT);
+  
+  // This delay gives the chance to wait for a Serial Monitor without blocking if none is found
+  delay(1500); 
 
-    if (subscription == &Light) {
+  // Defined in thingProperties.h
+  initProperties();
 
-      Serial.print(F("Got: "));
+  // Connect to Arduino IoT Cloud
+  ArduinoCloud.begin(ArduinoIoTPreferredConnection);
+  
+  /*
+     The following function allows you to obtain more information
+     related to the state of network and IoT Cloud connection and errors
+     the higher number the more granular information you’ll get.
+     The default is 0 (only errors).
+     Maximum is 4
+ */
+  setDebugMessageLevel(2);
+  ArduinoCloud.printDebugInfo();
+}
 
-      Serial.println((char *)Light.lastread);
+void loop() {
+  ArduinoCloud.update();
+  // Your code here 
+  delay(200);
+  
+}
 
-       if (!strcmp((char*) Light.lastread, "OFF"))
 
-      {
-
-        digitalWrite(relay, HIGH);
-
-      }
-
-      else
-
-      {
-
-        digitalWrite(relay, LOW);
-
-      }
-
-    }
-
+/*
+  Since Led is READ_WRITE variable, onLedChange() is
+  executed every time a new value is received from IoT Cloud.
+*/
+void onLedChange()  {
+  // Add your code here to act upon Led change
+  if(led == 1){
+    digitalWrite(23,HIGH);
+    Serial.println("ON");
+  }else{
+    digitalWrite(23,LOW);
+    Serial.println("OFF");
   }
 }
 
-void MQTT_connect() {
-  int8_t ret;
-  if (mqtt.connected()) {
-    return;
-  }
-  Serial.print("Connecting to MQTT... ");
-  uint8_t retries = 3;
-  while ((ret = mqtt.connect()) != 0) {
-    Serial.println(mqtt.connectErrorString(ret));
-    Serial.println("Retrying MQTT connection in 5 seconds...");
-    mqtt.disconnect();
-    delay(5000);
-    retries--;
-    if (retries == 0) {
-      while (1);
-    }
-  }
-  Serial.println("MQTT Connected!");
-}
