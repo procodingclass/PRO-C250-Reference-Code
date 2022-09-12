@@ -1,10 +1,12 @@
 #include "thingProperties.h"
 
+int ledPin=23;
+
 void setup() {
   // Initialize serial and wait for port to open:
   Serial.begin(9600);
   
-  pinMode(23, OUTPUT);
+  pinMode(ledPin, OUTPUT);
   
   // This delay gives the chance to wait for a Serial Monitor without blocking if none is found
   delay(1500); 
@@ -41,10 +43,10 @@ void loop() {
 void onLedChange()  {
   // Add your code here to act upon Led change
   if(led == 1){
-    digitalWrite(23,HIGH);
+    digitalWrite(ledPin,HIGH);
     Serial.println("ON");
   }else{
-    digitalWrite(23,LOW);
+    digitalWrite(ledPin,LOW);
     Serial.println("OFF");
   }
 }
